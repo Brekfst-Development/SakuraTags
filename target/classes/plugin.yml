@@ -1,0 +1,7 @@
+name: SakuraTags
+version: '1.0-SNAPSHOT'
+main: com.brekfst.sakuratags.SakuraTags
+api-version: '1.21'
+commands:
+  tags:
+  tagsadmin:
