@@ -22,7 +22,7 @@ gui:
     lore:
       - 'You do not have permission to use this tag.'
   filler_item:
-    material: BLACK_STAINED_GLASS_PANE
+    material: MAGENTA_STAINED_GLASS_PANE
     displayname: ' '
   has_tag_item:
     material: PLAYER_HEAD

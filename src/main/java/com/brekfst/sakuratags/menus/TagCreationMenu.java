@@ -37,20 +37,33 @@ public class TagCreationMenu extends Menu {
 
     @Override
     public void setMenuItems() {
+        // Set up main tag configuration items
         inventory.setItem(19, makeItem(Material.NAME_TAG, "&e&lSet Name", "&7Click to set the tag's name."));
         inventory.setItem(21, makeItem(Material.WRITABLE_BOOK, "&e&lSet Display Name", "&7Click to set the tag's display name."));
         inventory.setItem(23, makeItem(Material.PAPER, "&e&lSet Description", "&7Click to set the tag's description."));
         inventory.setItem(25, makeItem(Material.PAPER, "&e&lSet Permission", "&7Click to set the tag's permission node."));
         inventory.setItem(49, makeItem(Material.GREEN_DYE, "&a&lSave Tag", "&7Click to save the new tag."));
-        setFillerGlass();
+
+        // Add the "Reset Config" button
+        inventory.setItem(45, makeItem(Material.REDSTONE, "&c&lReset Config", "&7Click to reset the tag configuration."));
+
+        setFillerGlass();  // Apply border frame with filler glass
     }
 
+    // Sets filler glass around the edge only to create a frame
     public void setFillerGlass() {
         ItemStack fillerItem = makeItem(Material.BLACK_STAINED_GLASS_PANE, " "); // Empty name for aesthetic
-        for (int i = 0; i < inventory.getSize(); i++) {
-            if (inventory.getItem(i) == null) {
-                inventory.setItem(i, fillerItem); // Set filler item in empty slots
-            }
+
+        // Top and bottom rows
+        for (int i = 0; i < 9; i++) {
+            inventory.setItem(i, fillerItem);             // Top border
+            inventory.setItem(45 + i, fillerItem);        // Bottom border
+        }
+
+        // Left and right columns
+        for (int i = 9; i < 45; i += 9) {
+            inventory.setItem(i, fillerItem);             // Left border
+            inventory.setItem(i + 8, fillerItem);         // Right border
         }
     }
 
@@ -62,7 +75,7 @@ public class TagCreationMenu extends Menu {
 
         // Create a new session if it doesn't exist
         if (!sessionManager.isInSession(playerUUID)) {
-            sessionManager.startSession(playerUUID, new SessionData(null)); // Pass null or temporary ID if needed
+            sessionManager.startSession(playerUUID, new SessionData(null));
         }
 
         SessionData sessionData = sessionManager.getSessionData(playerUUID);
@@ -84,14 +97,19 @@ public class TagCreationMenu extends Menu {
                 player.sendMessage(ColorFormatter.prefix("&aPlease enter the tag's permission in chat:"));
                 player.closeInventory();
                 break;
+            case 45:
+                // Handle reset config
+                plugin.reloadConfig();  // Assuming there's a reloadConfig method in SakuraTags
+                player.sendMessage(ColorFormatter.prefix("&cConfiguration reset!"));
+                break;
             case 49:
                 if (sessionData.isComplete()) {
-                    String newId = generateUniqueId(); // Implement a method to generate a unique ID for new tags
+                    String newId = generateUniqueId();
                     Tag newTag = new Tag(newId, sessionData.getName(), sessionData.getDisplayName(),
                             sessionData.getDescription(), sessionData.getPermission());
 
                     // Directly add the tag via TagStorage
-                    plugin.getTagStorage().addTag(newTag);  // Now add directly to TagStorage
+                    plugin.getTagStorage().addTag(newTag);
 
                     player.sendMessage(ColorFormatter.prefix("&aTag created successfully!"));
                     sessionManager.endSession(playerUUID);
@@ -101,11 +119,8 @@ public class TagCreationMenu extends Menu {
                     player.sendMessage(ColorFormatter.prefix("&cPlease complete all fields before saving."));
                 }
                 break;
-
             default:
                 break;
         }
     }
-
-
 }

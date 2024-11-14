@@ -4,10 +4,12 @@ import com.brekfst.sakuratags.SakuraTags;
 import com.brekfst.sakuratags.data.Tag;
 import com.brekfst.sakuratags.utils.ColorUtil;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +41,7 @@ public class TagsMenu extends Menu {
         inventory.clear();
         setFillerGlass();
 
-        // Set the starting slots for tags to display
+        // Define the slots where tags will be placed
         int[] tagSlots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42};
 
         Map<String, Tag> tags = plugin.getTagStorage().getTags();
@@ -54,11 +56,20 @@ public class TagsMenu extends Menu {
 
             // Create item for each tag
             ItemStack item;
-            if (player.hasPermission(tag.getPermission()) || player.hasPermission("sakuratags.admin")) {
+            if (player.hasPermission(tag.getPermission()) || player.hasPermission("sakuratags.admin") || player.isOp()) {
                 item = createTagItem(tag, "gui.tag_select_item");
             } else {
                 item = createRestrictedItem();
             }
+
+            // Store the tag's UUID in the item's PersistentDataContainer
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                NamespacedKey key = new NamespacedKey(plugin, "tag-id");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, tag.getId());
+                item.setItemMeta(meta);
+            }
+
             inventory.setItem(tagSlots[slotIndex], item);
         }
 
@@ -76,6 +87,7 @@ public class TagsMenu extends Menu {
             inventory.setItem(49, createCurrentTagItem(currentTag));
         }
     }
+
 
     private ItemStack createTagItem(Tag tag, String configPath) {
         Material material = Material.getMaterial(plugin.getConfig().getString(configPath + ".material", "NAME_TAG"));
@@ -159,45 +171,42 @@ public class TagsMenu extends Menu {
         Player player = playerMenuUtility.getOwner();
         int slot = e.getRawSlot();
 
-        // Cancel the event to prevent default item movement behavior
-        e.setCancelled(true);
-
         // Handle pagination
         if (slot == 45 && page > 0) {
             page--;
             setMenuItems();
             player.openInventory(inventory);
-            return;
         } else if (slot == 53 && (page + 1) * TAGS_PER_PAGE < plugin.getTagStorage().getTags().size()) {
             page++;
             setMenuItems();
             player.openInventory(inventory);
-            return;
-        }
+        } else {
+            ItemStack clicked = e.getCurrentItem();
+            if (clicked != null && clicked.hasItemMeta()) {
+                ItemMeta meta = clicked.getItemMeta();
+                NamespacedKey key = new NamespacedKey(plugin, "tag-id");
 
-        // Handle tag selection
-        ItemStack clicked = e.getCurrentItem();
-        if (clicked != null && clicked.hasItemMeta() && clicked.getItemMeta().hasDisplayName()) {
-            String displayName = ColorUtil.stripColors(clicked.getItemMeta().getDisplayName());
-            Tag tag = plugin.getTagStorage().getTagByDisplayName(displayName);
+                if (meta.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
+                    String tagId = meta.getPersistentDataContainer().get(key, PersistentDataType.STRING);
 
-            if (tag != null) {
-                // Check permissions and set tag
-                if (player.hasPermission("sakuratags.admin") || player.isOp() || player.hasPermission(tag.getPermission())) {
-                    plugin.getTagStorage().setPlayerTag(player.getUniqueId(), tag);
-                    player.sendMessage(ColorUtil.parseColors("&aTag set to: " + tag.getDisplayName()));
+                    Tag tag = plugin.getTagStorage().getTag(tagId);
 
-                    // Close and reopen the inventory to update the display
-                    player.closeInventory();
-                    player.openInventory(inventory);
-                } else {
-                    player.sendMessage(ColorUtil.parseColors("&cYou do not have permission to use this tag."));
+                    if (tag != null) {
+                        if (player.hasPermission("sakuratags.admin") || player.isOp() || player.hasPermission(tag.getPermission())) {
+                            plugin.getTagStorage().setPlayerTag(player.getUniqueId(), tag);
+                            player.sendMessage(ColorUtil.parseColors("&aTag set to: " + tag.getDisplayName()));
+                            setMenuItems();
+                            player.openInventory(inventory);
+                        } else {
+                            player.sendMessage(ColorUtil.parseColors("&cYou do not have permission to use this tag."));
+                        }
+                    } else {
+                        player.sendMessage(ColorUtil.parseColors("&cCannot find the specified tag."));
+                    }
                 }
-            } else {
-                // Debug message if tag retrieval failed
-                player.sendMessage(ColorUtil.parseColors("&cCould not find the specified tag."));
             }
         }
     }
+
 }
 

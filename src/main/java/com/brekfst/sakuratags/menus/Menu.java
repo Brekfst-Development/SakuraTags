@@ -4,6 +4,7 @@ import com.brekfst.sakuratags.utils.ColorFormatter;
 import com.brekfst.sakuratags.utils.ColorUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -27,19 +28,22 @@ public abstract class Menu implements InventoryHolder {
     public void open() {
         menuName = getMenuName();
         slots = getSlots();
-        inventory = Bukkit.createInventory(this, slots, ColorUtil.parseColors(menuName));
+
+        // Ensure parseColors returns a String with legacy color codes (e.g., §l for bold)
+        String title = ColorUtil.parseColors(menuName);
+
+        inventory = Bukkit.createInventory(this, slots, title);
 
         setMenuItems();
 
         playerMenuUtility.getOwner().openInventory(inventory);
     }
-    public abstract void handleMenu(InventoryClickEvent event);
 
+    public abstract void handleMenu(InventoryClickEvent event);
 
     public abstract void setMenuItems();
 
     public abstract String getMenuName();
-
 
     public abstract int getSlots();
 

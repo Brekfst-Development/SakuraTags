@@ -4,6 +4,7 @@ import com.brekfst.sakuratags.SakuraTags;
 import com.brekfst.sakuratags.data.Tag;
 import com.brekfst.sakuratags.menus.TagCreationMenu;
 import com.brekfst.sakuratags.utils.ColorFormatter;
+import com.brekfst.sakuratags.utils.ColorUtil;
 import com.brekfst.sakuratags.utils.SessionData;
 import com.brekfst.sakuratags.utils.SessionManager;
 import org.bukkit.Bukkit;
@@ -37,16 +38,16 @@ public class ChatListener implements Listener {
 
             if (sessionData.getName() == null) {
                 sessionData.setName(input);
-                player.sendMessage("Name set! Please set the next field.");
+                player.sendMessage(ColorFormatter.prefix("Name set! Please set the next field."));
             } else if (sessionData.getDisplayName() == null) {
                 sessionData.setDisplayName(input);
-                player.sendMessage("Display Name set! Please set the next field.");
+                player.sendMessage(ColorFormatter.prefix("Display Name set! Please set the next field."));
             } else if (sessionData.getDescription() == null) {
                 sessionData.setDescription(input);
-                player.sendMessage("Description set! Please set the next field.");
+                player.sendMessage(ColorFormatter.prefix("Description set! Please set the next field."));
             } else if (sessionData.getPermission() == null) {
                 sessionData.setPermission(input);
-                player.sendMessage("Permission set! You can now save the tag.");
+                player.sendMessage(ColorFormatter.prefix("Permission set! You can now save the tag."));
             }
 
             // Schedule the menu opening on the main thread
@@ -62,18 +63,21 @@ public class ChatListener implements Listener {
     }
 
     private String formatChatMessage(Player player, String message) {
-        // Get the format from config or use default
-        String format = plugin.getConfig().getString("format_chat.format", "{sakura_tag} %1$s: %2$s");
+        // Get the format from config or use a default
+        String format = plugin.getConfig().getString("format_chat.format", "{sakura_tag} <%1$s>: %2$s");
 
         // Get the player's active tag (if any)
         Tag playerTag = plugin.getTagStorage().getPlayerTag(player.getUniqueId());
-        String sakuraTag = playerTag != null ? playerTag.getDisplayName() : ""; // Use the tag display name or empty if none
+        String sakuraTag = playerTag != null ? ColorUtil.parseColors(playerTag.getDisplayName()) + "&r" : ""; // Add reset code
 
-        // Replace placeholder with actual tag, if present
-        format = format.replace("{sakura_tag}", sakuraTag);
+        // Replace the tag placeholder if the tag exists; otherwise, remove it
+        if (!sakuraTag.isEmpty()) {
+            format = format.replace("{sakura_tag}", sakuraTag);
+        } else {
+            format = format.replace("{sakura_tag} ", ""); // Remove placeholder if no tag
+        }
 
-        // Format the final message with player name and message
-        return ColorFormatter.parse(String.format(format, player.getName(), message));
+        // Format the message with player name and message, then parse colors
+        return ColorUtil.parseColors(String.format(format, player.getName(), message));
     }
-
 }

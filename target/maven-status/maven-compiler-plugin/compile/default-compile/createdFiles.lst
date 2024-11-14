@@ -13,6 +13,7 @@ com\brekfst\sakuratags\SakuraTags.class
 com\brekfst\sakuratags\menus\TagCreationMenu.class
 com\brekfst\sakuratags\data\Tag.class
 com\brekfst\sakuratags\menus\TagEditMenu.class
+com\brekfst\sakuratags\commands\TagsReloadCommand.class
 com\brekfst\sakuratags\utils\SessionManager.class
 com\brekfst\sakuratags\commands\TagsCommand.class
 com\brekfst\sakuratags\data\DataManager.class

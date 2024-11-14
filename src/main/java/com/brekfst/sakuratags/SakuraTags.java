@@ -2,6 +2,7 @@ package com.brekfst.sakuratags;
 
 import com.brekfst.sakuratags.commands.TagAdminCommand;
 import com.brekfst.sakuratags.commands.TagsCommand;
+import com.brekfst.sakuratags.commands.TagsReloadCommand;
 import com.brekfst.sakuratags.data.DataManager;
 import com.brekfst.sakuratags.data.TagStorage;
 import com.brekfst.sakuratags.files.TagsConfig;
@@ -34,23 +35,30 @@ public class SakuraTags extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
+        // Set up config files first
         saveDefaultConfig();
-        loadPlayerDataConfig();
-
-        sessionManager = new SessionManager();
-        colorFormatter = new ColorFormatter();
         TagsConfig.setup(this); // Initialize tags.yml configuration
         TagsConfig.get().options().copyDefaults(true);
         TagsConfig.save();
 
-        tagStorage = new TagStorage(this);
+        // Initialize DataManager and TagStorage, which might use configurations
         dataManager = new DataManager(this);
+        tagStorage = new TagStorage(this);
 
-        tagStorage.loadTags();  // Load tags from TagsConfig
+        // Now load the configs to ensure dataManager is initialized
+        loadConfigs();
 
+        // Initialize other components
+        sessionManager = new SessionManager();
+        colorFormatter = new ColorFormatter();
+
+        // Load tags from TagsConfig
+        tagStorage.loadTags();
+
+        // Register commands and event listeners
         getCommand("tagsadmin").setExecutor(new TagAdminCommand(this));
         getCommand("tags").setExecutor(new TagsCommand(this));
+        getCommand("tagsreload").setExecutor(new TagsReloadCommand(this));
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
     }
@@ -89,6 +97,29 @@ public class SakuraTags extends JavaPlugin {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void reloadConfigs() {
+        // Reload main config.yml
+        reloadConfig();
+
+        // Reload tags.yml via TagsConfig
+        TagsConfig.reload();  // Make sure TagsConfig has a reload method that reloads the file
+
+        // Reload playerdata.yml
+        if (playerDataConfig != null) {
+            playerDataConfig = YamlConfiguration.loadConfiguration(playerDataFile);
+        }
+
+        // Reload tags in tagStorage to apply any changes in tags.yml
+        tagStorage.loadTags();
+
+        getLogger().info("All configurations have been reloaded successfully.");
+    }
+
+    public void loadConfigs() {
+        saveDefaultConfig();
+        dataManager.reloadTagsConfig();
     }
 
 

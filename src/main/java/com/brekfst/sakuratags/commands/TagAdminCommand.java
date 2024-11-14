@@ -3,6 +3,7 @@ package com.brekfst.sakuratags.commands;
 import com.brekfst.sakuratags.SakuraTags;
 import com.brekfst.sakuratags.menus.MainAdminMenu;
 import com.brekfst.sakuratags.menus.PlayerMenuUtility;
+import com.brekfst.sakuratags.utils.ColorFormatter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,13 +20,13 @@ public class TagAdminCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Only players can use this command.");
+            sender.sendMessage(ColorFormatter.prefix("&cOnly players can use this command."));
             return true;
         }
 
         Player player = (Player) sender;
         if (!player.hasPermission("sakura.admin")) {
-            player.sendMessage("You do not have permission to use this command.");
+            player.sendMessage(ColorFormatter.prefix("&cYou do not have permission to use this command."));
             return true;
         }
 

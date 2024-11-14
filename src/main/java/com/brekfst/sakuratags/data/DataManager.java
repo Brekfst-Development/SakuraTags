@@ -39,6 +39,10 @@ public class DataManager {
         }
         tagsConfig = YamlConfiguration.loadConfiguration(tagsFile);
     }
+    public void reloadTagsConfig() {
+        tagsConfig = YamlConfiguration.loadConfiguration(tagsFile);
+    }
+
 
     public void saveTagsConfig() {
         if (tagsConfig != null && tagsFile != null) {

@@ -43,15 +43,17 @@ public class TagStorage {
         return tags.get(id);
     }
 
-    public Tag getPlayerTag(UUID uuid) {
-        String tagId = plugin.getDataManager().getPlayerDataConfig().getString("players." + uuid + ".current_tag");
-        return tagId != null ? getTag(tagId) : null; // Uses getTag to retrieve Tag object by its ID
+    public Tag getPlayerTag(UUID playerUUID) {
+        FileConfiguration playerDataConfig = plugin.getPlayerDataConfig();
+        String tagId = playerDataConfig.getString("players." + playerUUID + ".current_tag");
+        return tagId != null ? getTag(tagId) : null;
     }
 
+    // Sets the active tag for a player by UUID
     public void setPlayerTag(UUID playerUUID, Tag tag) {
         FileConfiguration playerDataConfig = plugin.getPlayerDataConfig();
         playerDataConfig.set("players." + playerUUID + ".current_tag", tag.getId());
-        plugin.savePlayerDataConfig(); // Ensure the changes are saved to playerdata.yml
+        plugin.savePlayerDataConfig();
     }
 
     public void addTag(Tag tag) {
