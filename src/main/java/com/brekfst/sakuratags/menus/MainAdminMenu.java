@@ -53,18 +53,20 @@ public class MainAdminMenu extends Menu {
 
         int slot = 10;
         for (int i = startIndex; i < endIndex; i++) {
-            Tag tag = tags.get(i); // Accessing each Tag directly by index
+            Tag tag = tags.get(i);
             ItemStack tagItem = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = tagItem.getItemMeta();
 
             if (meta != null) {
-                // Format display name
                 meta.setDisplayName(ColorUtil.parseColors(tag.getDisplayName()));
 
-                // Format lore lines
+                // Set lore with click instructions
                 List<String> lore = new ArrayList<>();
                 lore.add(ColorUtil.parseColors("&7Description: " + tag.getDescription()));
                 lore.add(ColorUtil.parseColors("&7Permission: " + tag.getPermission()));
+                lore.add("");
+                lore.add(ColorUtil.parseColors("&aClick to edit this tag"));
+                lore.add(ColorUtil.parseColors("&cShift-Click to delete this tag"));
                 meta.setLore(lore);
 
                 tagItem.setItemMeta(meta);
@@ -140,9 +142,17 @@ public class MainAdminMenu extends Menu {
 
         if (tagIndex < tags.size()) {
             Tag selectedTag = tags.get(tagIndex);
-            event.getWhoClicked().sendMessage(ColorFormatter.parse("&aYou selected the tag: " + selectedTag.getDisplayName()));
-            // Additional functionality can be added here.
+
+            if (event.isShiftClick()) {
+                // Shift-click to delete tag
+                tagStorage.removeTag(selectedTag.getId());
+                event.getWhoClicked().sendMessage(ColorUtil.parseColors("&cTag " + selectedTag.getDisplayName() + "&c has been deleted."));
+                setMenuItems();
+            } else {
+                // Normal click to open edit menu
+                new TagEditMenu(playerMenuUtility, plugin, selectedTag.getId()).open();
+            }
         }
     }
-}
 
+}

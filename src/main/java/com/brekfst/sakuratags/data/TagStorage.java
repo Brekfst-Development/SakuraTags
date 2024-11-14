@@ -56,6 +56,22 @@ public class TagStorage {
         plugin.savePlayerDataConfig();
     }
 
+    public void removePlayerTag(UUID playerUUID) {
+        FileConfiguration playerDataConfig = plugin.getPlayerDataConfig();
+        playerDataConfig.set("players." + playerUUID + ".current_tag", null); // Clear current tag
+        plugin.savePlayerDataConfig();
+    }
+
+    public void removeTag(String tagId) {
+        // Remove the tag from the in-memory map
+        tags.remove(tagId);
+
+        // Also remove the tag from the config file
+        FileConfiguration tagsConfig = TagsConfig.get();
+        tagsConfig.set("tags." + tagId, null); // Set the tag section to null to delete it
+        TagsConfig.save(); // Save changes to the config file
+    }
+
     public void addTag(Tag tag) {
         tags.put(tag.getId(), tag); // Add tag to in-memory map
         saveTagsToConfig(); // Persist in tags.yml
@@ -64,13 +80,18 @@ public class TagStorage {
     public void updateTag(String id, SessionData sessionData) {
         Tag tag = tags.get(id);
         if (tag != null) {
+            // Only update non-null fields
             if (sessionData.getName() != null) tag.setName(sessionData.getName());
             if (sessionData.getDisplayName() != null) tag.setDisplayName(sessionData.getDisplayName());
             if (sessionData.getDescription() != null) tag.setDescription(sessionData.getDescription());
             if (sessionData.getPermission() != null) tag.setPermission(sessionData.getPermission());
+
+            // Save changes to config
             saveTagsToConfig();
         }
     }
+
+
 
     private void saveTagsToConfig() {
         FileConfiguration tagsConfig = TagsConfig.get();

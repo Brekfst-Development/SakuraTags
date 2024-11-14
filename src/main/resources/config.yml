@@ -1,41 +1,36 @@
 # SakuraTags Configuration
 
-force_tags: false
-check_updates: true
-legacy_hex: false
-papi_chat: true
-
 format_chat:
   enabled: true
-  format: '{sakura_tag} %1$s: %2$s'
+  format: '{sakura_tag}{player}: {message}'
 
 gui:
   title: '&d&lSelect a Tag!'
+
   tag_select_item:
-    material: NAME_TAG
-    displayname: '%tag_displayname%'
+    material: LIME_DYE
+    displayname: '%tag_displayname%' # Placeholder for the tag display name
     lore:
-      - '%tag_description%'
+      - '%tag_description%'          # Placeholder for tag description
+
   restricted_item:
     material: GRAY_DYE
-    displayname: 'Locked Tag'
+    displayname: '&cLocked Tag'
     lore:
-      - 'You do not have permission to use this tag.'
+      - '&7You do not have permission to use this tag.'
+
   filler_item:
-    material: BLACK_STAINED_GLASS_PANE
+    material: MAGENTA_STAINED_GLASS_PANE
     displayname: ' '
-  has_tag_item:
-    material: PLAYER_HEAD
-    displayname: 'Current tag: <white>%tag_displayname%'
-    lore:
-      - 'Click to remove your current tag'
+
   next_page:
     material: PAPER
-    displayname: 'Next Page'
+    displayname: '&eNext Page'
     lore:
-      - 'Go to the next page of tags'
+      - '&7Go to the next page of tags'
+
   previous_page:
     material: PAPER
-    displayname: 'Previous Page'
+    displayname: '&ePrevious Page'
     lore:
-      - 'Return to the previous page of tags'
+      - '&7Return to the previous page of tags'

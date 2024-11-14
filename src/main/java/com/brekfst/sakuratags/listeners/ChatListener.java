@@ -3,6 +3,7 @@ package com.brekfst.sakuratags.listeners;
 import com.brekfst.sakuratags.SakuraTags;
 import com.brekfst.sakuratags.data.Tag;
 import com.brekfst.sakuratags.menus.TagCreationMenu;
+import com.brekfst.sakuratags.menus.TagEditMenu;
 import com.brekfst.sakuratags.utils.ColorFormatter;
 import com.brekfst.sakuratags.utils.ColorUtil;
 import com.brekfst.sakuratags.utils.SessionData;
@@ -13,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
+import java.util.IllegalFormatException;
 import java.util.UUID;
 
 public class ChatListener implements Listener {
@@ -29,33 +31,39 @@ public class ChatListener implements Listener {
         UUID playerUUID = player.getUniqueId();
         SessionManager sessionManager = plugin.getSessionManager();
 
-        // If the player is in a session, handle the input
         if (sessionManager.isInSession(playerUUID)) {
+            // Cancel the event for direct input handling
             event.setCancelled(true);
 
             SessionData sessionData = sessionManager.getSessionData(playerUUID);
             String input = event.getMessage();
 
-            if (sessionData.getName() == null) {
-                sessionData.setName(input);
-                player.sendMessage(ColorFormatter.prefix("Name set! Please set the next field."));
-            } else if (sessionData.getDisplayName() == null) {
-                sessionData.setDisplayName(input);
-                player.sendMessage(ColorFormatter.prefix("Display Name set! Please set the next field."));
-            } else if (sessionData.getDescription() == null) {
-                sessionData.setDescription(input);
-                player.sendMessage(ColorFormatter.prefix("Description set! Please set the next field."));
-            } else if (sessionData.getPermission() == null) {
-                sessionData.setPermission(input);
-                player.sendMessage(ColorFormatter.prefix("Permission set! You can now save the tag."));
+            // Set fields based on the current edit type
+            switch (sessionData.getType()) {
+                case "name" -> sessionData.setName(input);
+                case "displayName" -> sessionData.setDisplayName(input);
+                case "description" -> sessionData.setDescription(input);
+                case "permission" -> sessionData.setPermission(input);
             }
 
-            // Schedule the menu opening on the main thread
+            // Clear waiting input flag and cancel timeout
+            sessionData.setWaitingForInput(false);
+
+            // Reopen the appropriate menu
             Bukkit.getScheduler().runTask(plugin, () -> {
-                new TagCreationMenu(plugin.getPlayerMenuUtility(player), plugin).open();
+                if (sessionData.isCreationMode()) {
+                    new TagCreationMenu(plugin.getPlayerMenuUtility(player), plugin).open();
+                } else {
+                    Tag tag = plugin.getTagStorage().getTag(sessionData.getTagId());
+                    if (tag != null) {
+                        new TagEditMenu(plugin.getPlayerMenuUtility(player), plugin, tag.getId()).open();
+                    } else {
+                        player.sendMessage(ColorFormatter.prefix("&cError: Unable to reopen the tag edit menu. Tag not found."));
+                    }
+                }
             });
         } else {
-            // Check if chat formatting is enabled and format the chat message
+            // Apply chat formatting if enabled in the config
             if (plugin.getConfig().getBoolean("format_chat.enabled")) {
                 event.setFormat(formatChatMessage(player, event.getMessage()));
             }
@@ -63,21 +71,27 @@ public class ChatListener implements Listener {
     }
 
     private String formatChatMessage(Player player, String message) {
-        // Get the format from config or use a default
-        String format = plugin.getConfig().getString("format_chat.format", "{sakura_tag} <%1$s>: %2$s");
+        // Retrieve the format from config or use a default
+        String format = plugin.getConfig().getString("format_chat.format", "{sakura_tag} {player}: {message}");
 
         // Get the player's active tag (if any)
         Tag playerTag = plugin.getTagStorage().getPlayerTag(player.getUniqueId());
-        String sakuraTag = playerTag != null ? ColorUtil.parseColors(playerTag.getDisplayName()) + "&r" : ""; // Add reset code
+        String sakuraTag = playerTag != null ? ColorUtil.parseColors(playerTag.getDisplayName()) + "&r" : "";
 
-        // Replace the tag placeholder if the tag exists; otherwise, remove it
-        if (!sakuraTag.isEmpty()) {
-            format = format.replace("{sakura_tag}", sakuraTag);
-        } else {
-            format = format.replace("{sakura_tag} ", ""); // Remove placeholder if no tag
+        // Replace the placeholders
+        format = format
+                .replace("{sakura_tag}", sakuraTag.isEmpty() ? "" : sakuraTag + " ")
+                .replace("{player}", player.getName())
+                .replace("{message}", message);
+
+        // Escape any remaining '%' symbols in the format string
+        format = format.replace("%", "%%");
+
+        try {
+            return ColorUtil.parseColors(format);
+        } catch (IllegalFormatException e) {
+            plugin.getLogger().severe("Error formatting chat message: " + e.getMessage());
+            return message; // Fallback to raw message on error
         }
-
-        // Format the message with player name and message, then parse colors
-        return ColorUtil.parseColors(String.format(format, player.getName(), message));
     }
 }

@@ -28,42 +28,29 @@ public class TagCreationMenu extends Menu {
 
     @Override
     public int getSlots() {
-        return 54;
+        return 27;
     }
 
     private String generateUniqueId() {
-        return UUID.randomUUID().toString(); // Generates a random unique ID
+        return UUID.randomUUID().toString();
     }
 
     @Override
     public void setMenuItems() {
-        // Set up main tag configuration items
-        inventory.setItem(19, makeItem(Material.NAME_TAG, "&e&lSet Name", "&7Click to set the tag's name."));
-        inventory.setItem(21, makeItem(Material.WRITABLE_BOOK, "&e&lSet Display Name", "&7Click to set the tag's display name."));
-        inventory.setItem(23, makeItem(Material.PAPER, "&e&lSet Description", "&7Click to set the tag's description."));
-        inventory.setItem(25, makeItem(Material.PAPER, "&e&lSet Permission", "&7Click to set the tag's permission node."));
-        inventory.setItem(49, makeItem(Material.GREEN_DYE, "&a&lSave Tag", "&7Click to save the new tag."));
-
-        // Add the "Reset Config" button
-        inventory.setItem(45, makeItem(Material.REDSTONE, "&c&lReset Config", "&7Click to reset the tag configuration."));
-
-        setFillerGlass();  // Apply border frame with filler glass
+        inventory.setItem(10, makeItem(Material.NAME_TAG, "&e&lSet Name", "&7Click to set the tag's name."));
+        inventory.setItem(12, makeItem(Material.WRITABLE_BOOK, "&e&lSet Display Name", "&7Click to set the tag's display name."));
+        inventory.setItem(14, makeItem(Material.PAPER, "&e&lSet Description", "&7Click to set the tag's description."));
+        inventory.setItem(16, makeItem(Material.PAPER, "&e&lSet Permission", "&7Click to set the tag's permission node."));
+        inventory.setItem(22, makeItem(Material.GREEN_DYE, "&a&lSave Tag", "&7Click to save the new tag."));
+        setFillerGlass();
     }
 
-    // Sets filler glass around the edge only to create a frame
     public void setFillerGlass() {
-        ItemStack fillerItem = makeItem(Material.BLACK_STAINED_GLASS_PANE, " "); // Empty name for aesthetic
-
-        // Top and bottom rows
-        for (int i = 0; i < 9; i++) {
-            inventory.setItem(i, fillerItem);             // Top border
-            inventory.setItem(45 + i, fillerItem);        // Bottom border
-        }
-
-        // Left and right columns
-        for (int i = 9; i < 45; i += 9) {
-            inventory.setItem(i, fillerItem);             // Left border
-            inventory.setItem(i + 8, fillerItem);         // Right border
+        ItemStack fillerItem = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ");
+        for (int i = 0; i < inventory.getSize(); i++) {
+            if (i != 22 && inventory.getItem(i) == null) {
+                inventory.setItem(i, fillerItem);
+            }
         }
     }
 
@@ -72,55 +59,59 @@ public class TagCreationMenu extends Menu {
         Player player = playerMenuUtility.getOwner();
         UUID playerUUID = player.getUniqueId();
         SessionManager sessionManager = plugin.getSessionManager();
-
-        // Create a new session if it doesn't exist
-        if (!sessionManager.isInSession(playerUUID)) {
-            sessionManager.startSession(playerUUID, new SessionData(null));
-        }
-
         SessionData sessionData = sessionManager.getSessionData(playerUUID);
 
+        if (sessionData == null) {
+            sessionData = new SessionData(playerUUID, plugin);
+            sessionManager.startSession(playerUUID, sessionData);
+        }
+
         switch (event.getSlot()) {
-            case 19:
+            case 10 -> {
+                sessionData.setType("name");
+                sessionData.setWaitingForInput(true);
                 player.sendMessage(ColorFormatter.prefix("&aPlease enter the tag's name in chat:"));
                 player.closeInventory();
-                break;
-            case 21:
+            }
+            case 12 -> {
+                sessionData.setType("displayName");
+                sessionData.setWaitingForInput(true);
                 player.sendMessage(ColorFormatter.prefix("&aPlease enter the tag's display name in chat:"));
                 player.closeInventory();
-                break;
-            case 23:
+            }
+            case 14 -> {
+                sessionData.setType("description");
+                sessionData.setWaitingForInput(true);
                 player.sendMessage(ColorFormatter.prefix("&aPlease enter the tag's description in chat:"));
                 player.closeInventory();
-                break;
-            case 25:
+            }
+            case 16 -> {
+                sessionData.setType("permission");
+                sessionData.setWaitingForInput(true);
                 player.sendMessage(ColorFormatter.prefix("&aPlease enter the tag's permission in chat:"));
                 player.closeInventory();
-                break;
-            case 45:
-                // Handle reset config
-                plugin.reloadConfig();  // Assuming there's a reloadConfig method in SakuraTags
-                player.sendMessage(ColorFormatter.prefix("&cConfiguration reset!"));
-                break;
-            case 49:
-                if (sessionData.isComplete()) {
-                    String newId = generateUniqueId();
-                    Tag newTag = new Tag(newId, sessionData.getName(), sessionData.getDisplayName(),
-                            sessionData.getDescription(), sessionData.getPermission());
+            }
+            case 22 -> {
+                String tagId = sessionData.getTagId() != null ? sessionData.getTagId() : generateUniqueId();
+                Tag tag = new Tag(
+                        tagId,
+                        sessionData.getName() != null ? sessionData.getName() : "Default Name",
+                        sessionData.getDisplayName() != null ? sessionData.getDisplayName() : "Default Display Name",
+                        sessionData.getDescription() != null ? sessionData.getDescription() : "Default Description",
+                        sessionData.getPermission() != null ? sessionData.getPermission() : "default.permission"
+                );
 
-                    // Directly add the tag via TagStorage
-                    plugin.getTagStorage().addTag(newTag);
-
-                    player.sendMessage(ColorFormatter.prefix("&aTag created successfully!"));
-                    sessionManager.endSession(playerUUID);
-
-                    new MainAdminMenu(playerMenuUtility, plugin).open();  // Return to the main admin menu
+                if (sessionData.isCreationMode()) {
+                    plugin.getTagStorage().addTag(tag);
+                    player.sendMessage(ColorFormatter.prefix("&aNew tag created successfully!"));
                 } else {
-                    player.sendMessage(ColorFormatter.prefix("&cPlease complete all fields before saving."));
+                    plugin.getTagStorage().updateTag(tagId, sessionData);
+                    player.sendMessage(ColorFormatter.prefix("&aTag updated successfully!"));
                 }
-                break;
-            default:
-                break;
+
+                sessionManager.endSession(playerUUID);
+                new MainAdminMenu(playerMenuUtility, plugin).open();
+            }
         }
     }
 }

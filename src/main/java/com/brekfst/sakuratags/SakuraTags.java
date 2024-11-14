@@ -11,6 +11,7 @@ import com.brekfst.sakuratags.listeners.MenuListener;
 import com.brekfst.sakuratags.menus.PlayerMenuUtility;
 import com.brekfst.sakuratags.utils.ColorFormatter;
 import com.brekfst.sakuratags.utils.SessionManager;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -41,6 +42,12 @@ public class SakuraTags extends JavaPlugin {
         TagsConfig.get().options().copyDefaults(true);
         TagsConfig.save();
 
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            Bukkit.getLogger().info("PlaceholderAPI found! Registering expansion...");
+            new SakuraTagsExpansion(this).register();
+        }
+
+
         // Initialize DataManager and TagStorage, which might use configurations
         dataManager = new DataManager(this);
         tagStorage = new TagStorage(this);
@@ -49,7 +56,7 @@ public class SakuraTags extends JavaPlugin {
         loadConfigs();
 
         // Initialize other components
-        sessionManager = new SessionManager();
+        sessionManager = new SessionManager(this);
         colorFormatter = new ColorFormatter();
 
         // Load tags from TagsConfig
@@ -60,7 +67,7 @@ public class SakuraTags extends JavaPlugin {
         getCommand("tags").setExecutor(new TagsCommand(this));
         getCommand("tagsreload").setExecutor(new TagsReloadCommand(this));
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
-        getServer().getPluginManager().registerEvents(new MenuListener(), this);
+        getServer().getPluginManager().registerEvents(new MenuListener(this), this);
     }
 
     @Override
@@ -100,18 +107,13 @@ public class SakuraTags extends JavaPlugin {
     }
 
     public void reloadConfigs() {
-        // Reload main config.yml
         reloadConfig();
+        TagsConfig.reload();
 
-        // Reload tags.yml via TagsConfig
-        TagsConfig.reload();  // Make sure TagsConfig has a reload method that reloads the file
-
-        // Reload playerdata.yml
         if (playerDataConfig != null) {
             playerDataConfig = YamlConfiguration.loadConfiguration(playerDataFile);
         }
 
-        // Reload tags in tagStorage to apply any changes in tags.yml
         tagStorage.loadTags();
 
         getLogger().info("All configurations have been reloaded successfully.");
@@ -134,10 +136,6 @@ public class SakuraTags extends JavaPlugin {
 
     public SessionManager getSessionManager() {
         return sessionManager;
-    }
-
-    public ColorFormatter getColorFormatter() {
-        return colorFormatter;
     }
 
     public PlayerMenuUtility getPlayerMenuUtility(Player player) {

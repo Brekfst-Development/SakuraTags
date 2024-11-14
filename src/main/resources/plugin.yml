@@ -2,6 +2,7 @@ name: SakuraTags
 version: '${project.version}'
 main: com.brekfst.sakuratags.SakuraTags
 api-version: '1.21'
+softdepend: [PlaceholderAPI]
 commands:
   tags:
   tagsadmin:
