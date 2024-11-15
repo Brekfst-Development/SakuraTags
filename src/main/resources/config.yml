@@ -1,26 +1,37 @@
-# SakuraTags Configuration
+################################ SAKURA-TAGS ################################
+#
+#  ___.                  __      _____         __        .___
+#  \_ |_________   ____ |  | ___/ ____\_______/  |_    __| _/_______  __
+#   | __ \_  __ \_/ __ \|  |/ /\   __\/  ___/\   __\  / __ |/ __ \  \/ /
+#   | \_\ \  | \/\  ___/|    <  |  |  \___ \  |  |   / /_/ \  ___/\   /
+#   |___  /__|    \___  >__|_ \ |__| /____  > |__|   \____ |\___  >\_/
+#       \/            \/     \/           \/              \/    \/
+#
+#              SakuraTags - Author: brekfst - Version: 1.0
+#
+###############################################################################
 
 format_chat:
-  enabled: true
+  enabled: false
   format: '{sakura_tag}{player}: {message}'
 
 gui:
   title: '&d&lSelect a Tag!'
 
   tag_select_item:
-    material: LIME_DYE
-    displayname: '%tag_displayname%' # Placeholder for the tag display name
+    material: NAME_TAG
+    displayname: '%tag_displayname%'  # Placeholder for the tag display name
     lore:
-      - '%tag_description%'          # Placeholder for tag description
+      - '%tag_description%'           # Placeholder for tag description
 
   restricted_item:
-    material: GRAY_DYE
+    material: BARRIER
     displayname: '&cLocked Tag'
     lore:
       - '&7You do not have permission to use this tag.'
 
   filler_item:
-    material: MAGENTA_STAINED_GLASS_PANE
+    material: GRAY_STAINED_GLASS_PANE
     displayname: ' '
 
   next_page:
